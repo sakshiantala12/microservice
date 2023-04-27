@@ -1,0 +1,43 @@
+services:
+      mongo_db:
+          container_name: mongodb_container
+          image: mongo:latest
+          restart: always
+          volumes:
+            - mongo_db:/data/db
+      post:
+          build:
+            dockerfile: Dockerfile
+            context: ./posts
+          container_name: posts
+          ports:
+             - "8002:8002"
+          restart: always
+          environment: 
+              PORT: 8002
+              DBURL: 'mongodb://mongo_db:27017/posts'
+          depends_on:
+                - mongo_db
+      comments:
+          build: 
+            dockerfile: Dockerfile
+            context: ./comments
+          ports:
+             - "8001:8001"
+          restart: always
+          environment: 
+              PORT: 8001
+              DBURL: 'mongodb://mongo_db:27017/comments'
+          depends_on:
+                - mongo_db
+      nginx-proxy:
+          build:
+            dockerfile: Dockerfile
+            context: ./nginx
+          depends_on:
+            - post
+            - comments
+          ports:
+            - 8080:80
+volumes:
+  mongo_db: {}
